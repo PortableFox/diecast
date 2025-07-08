@@ -1,6 +1,7 @@
 from random import random
 from bisect import bisect_left
 from math import pi, e, sqrt
+from collections import Counter
 from statistics import stdev
 import matplotlib.pyplot as plt
 
@@ -76,10 +77,13 @@ class dice:
     Sums dice rolls based on value map
     ----------------------------------
     :param (list): list of dice rolls to sum over
-    :returns: sum of all dice in list
+    :returns: if dice is numeric sum of all dice in list otherwise dictionary of counts for each side rolled
     '''
     def sum(self, rolls: list):
-        return sum([self.value_map[roll] for roll in rolls]) if self.is_numeric else 0
+        if self.is_numeric:
+            return sum([self.value_map[roll] for roll in rolls])
+        else:
+            return dict(sorted(Counter(rolls).items()))
     
     '''
     Generate distribution using monte carlo method
@@ -87,24 +91,28 @@ class dice:
     :param num_samples (int): number of samples to generate with
     :returns: dictionary of the form {side: times rolled for each side}
     '''
-    def mc(self, num_samples: int = 100000):
-        counts = {v: 0 for v in self.values}
+    def mc(self, num_samples: int = 100000, num_dice: int = 1):
+        if not self.is_numeric and num_dice > 1:
+            raise ValueError("Monte carlo distributions over composite rolls are undefined for non-numeric dice")
+        counts = {}
         for i in range(num_samples):
-            counts[self.roll()] += 1        
-        return counts
+            rolls = [self.roll() for i in range(num_dice)]
+            key = self.sum(rolls) if self.is_numeric else rolls[0]
+            counts[key] = 1 if key not in counts.keys() else counts[key]+1 
+        return dict(sorted(counts.items()))
     
     '''
     Display plot of monte carlo distribution
     ----------------------------------------
     :param num_samples (int): number of samples to generate with
     '''
-    def mc_plot(self, num_samples: int = 100000):
-        counts = self.mc(num_samples)
+    def mc_plot(self, num_samples: int = 100000, num_dice: int = 1):
+        counts = self.mc(num_samples, num_dice)
         bins = [v for k,v in counts.items()]
         totals = [v/sum(bins) for v in bins]
         
-        plt.bar(self.values, totals, color='skyblue', edgecolor='black')
-        plt.gca().set_xticks(self.values)
+        plt.bar(counts.keys(), totals, color='skyblue', edgecolor='black')
+        plt.gca().set_xticks(list(counts.keys()))
         plt.title('Distribution')
         plt.xlabel('Values')
         plt.ylabel('Frequency')
@@ -126,11 +134,11 @@ class dice:
         return dice(values, [i * 1.0/len(values) for i in range(1, len(values)+1)], value_map)
     
     '''
-    Construct a die with an approximately normal distribution
-    ---------------------------------------------------------
+    Construct a die with a truncated normal distribution
+    ----------------------------------------------------
     :param values (list[str] | list[int]): list of dice sides
     :param value_map: optional map for side values -> integer values (useful if sides are strings)
-    :returns: dice with approximately normal distribution weighting for sides
+    :returns: dice with normal distribution weighting for sides
     '''
     @staticmethod
     def normal(values: list[str] | list[int], value_map = None):
