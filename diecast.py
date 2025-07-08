@@ -42,7 +42,7 @@ class dice:
     def __str__(self):
         res = f'die {{\n'
         for idx, val in enumerate(self.values):
-            res += f'  {val}: {(self.dist[idx] - (self.dist[idx-1] if idx > 0 else 0))/self.dist[-1]:.3f}%\n'
+            res += f'\t{val} [val: {self.value_map[val] if self.is_numeric else "N/A"}]: {(self.dist[idx]-(self.dist[idx-1] if idx > 0 else 0))/self.dist[-1]:.3f}%\n'
         res += f'}}'
         return res
     
