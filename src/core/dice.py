@@ -3,7 +3,6 @@ from bisect import bisect_left
 from math import pi, e, sqrt
 from collections import Counter
 from statistics import stdev
-import lark
 import matplotlib.pyplot as plt
 
 

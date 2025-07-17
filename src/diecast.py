@@ -1,3 +1,3 @@
-from core.dice import *
-from core.sdice import *
-from interp.interp import *
+from core.dice import Dice
+from core.sdice import StatefulDice
+from interp.interp import Interpreter
