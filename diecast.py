@@ -336,6 +336,15 @@ class stateful_dice:
         self.update_state(result)
         return result
     
+    def roll_until(self, node_id, max_iter = 100):
+        rolls = []
+        if node_id in self.node_list:
+            roll_count = 0
+            while self.node != node_id and roll_count <= max_iter:
+                roll_count += 1
+                rolls.append(self.roll())
+        return rolls
+    
     def terminated(self):
         return self.node_list[self.node]['dice'] == self.node_list[self.TERMINAL]['dice']
     
