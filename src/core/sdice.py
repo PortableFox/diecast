@@ -105,8 +105,8 @@ class StatefulDice:
         self.node = self.start_node
      
     def roll(self):
-        result = self.node_list[self.node]['dice']()[0]
-        self.update_state(result)
+        result = self.node_list[self.node]['dice']()
+        self.update_state(sum(result) if result.is_numeric else str(result))
         return result
     
     def roll_until(self, node_id, max_iter = 100):
