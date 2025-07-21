@@ -16,30 +16,33 @@ class Dice:
     Constructor
     -----------
     :param values (list[str] | list[int]): list of values representing the sides of the dice
-    :param dist (list[float]): list representing distributions for each side where each value is mapped to for rolls within [prev
-                               dist val, dist val). Uses 0 implicitly as the minimum for the first side. Distribution max can be 
-                               any value, dice will automatically adjust for distributions that aren't between [0, 1).
+    :param weights (list[float]): list of weightings for each side 
     :param value_map (list[int]): optional mapping representing how to convert values to integers, useful when dice sides are 
                                   strings. Mapping is of the form values[idx] -> value_map[idx]
     '''
-    def __init__(self, values: list[str] | list[int], dist: list[float], value_map: list[int] = None, name = None) -> None:
-        self.name = name if name else f"d{len(values)}<custom>"
-        if len(dist) > 0 and not sorted(dist):
-            raise ValueError("distribution must be strictly increasing")
-        if len(dist) != len(set(dist)):
-            raise ValueError("distribution must not have duplicate elements")
-        if len(values) != len(dist):
-            raise ValueError("distribution must have exactly one element for each value")
+    def __init__(self, values: list[str] | list[int], weights: list[float], value_map: list[int] = None, name = None) -> None:
+        if len(values) != len(weights):
+            raise ValueError("weights must have exactly one element for each value")
+        
         if value_map and len(value_map) != len(values):
             raise ValueError("values must be mapped one-to-one")
+        
+        self.name = name if name else f"d{len(values)}<custom>"
         self.values = values
-        self.dist = dist
+        self.weights = weights
+        
+        # Convert from weights to different structure that allows binary search over our probability distribution
+        self.dist = [round(sum(weights[:i+1]), 8) for i in range(len(weights))]
+        
         if value_map:
-            self.value_map = {v: m for v, m in zip(self.values, value_map)}
+            self.value_map = value_map
         elif type(self.values[0]) == int:
             self.value_map = {v: v for v in self.values}
         else:
-            self.value_map = {v: 0 for v in self.values}
+            try:
+                self.value_map = {v: int(v) for v in self.values}
+            except:
+                self.value_map = {v: 0 for v in self.values}
         self.is_numeric = set(self.value_map.values()) != {0}
         
     def __call__(self, ndice = 1):
@@ -58,12 +61,12 @@ class Dice:
         return self.roll()
     
     def __repr__(self):
-        return f'Dice(name = "{self.name}", values = {self.values}, dist = {self.dist})' 
+        return f'Dice(name = "{self.name}", values = {self.values}, weights = {self.weights})' 
     
     def __str__(self):
         res = f'{self.name} dice {{\n'
         for idx, val in enumerate(self.values):
-            res += f'\t{val} [val: {self.value_map[val] if self.is_numeric else "N/A"}]: {(self.dist[idx]-(self.dist[idx-1] if idx > 0 else 0))/self.dist[-1]:.3f}%\n'
+            res += f'\t{val} [val: {self.value_map[val] if self.is_numeric else "N/A"}]: {self.weights[idx]/sum(self.weights):.3f}%\n'
         res += f'}}'
         return res
     
@@ -107,8 +110,8 @@ class Dice:
             raise ValueError("Monte carlo distributions over composite rolls are undefined for non-numeric dice")
         counts = {}
         for i in range(num_samples):
-            rolls = [self.roll() for i in range(num_dice)]
-            key = self.sum(rolls) if self.is_numeric else rolls[0]
+            rolls = self.roll(num_dice)
+            key = sum(rolls) if self.is_numeric else str(rolls)
             counts[key] = 1 if key not in counts.keys() else counts[key]+1 
         return dict(sorted(counts.items()))
     
@@ -140,6 +143,7 @@ class Dice:
     
     config layout:
     {
+        "name": DICE_NAME
         "dist_type": "uniform" | "normal" | "custom",
         "sides": {
             SIDE_LABEL : {
@@ -151,6 +155,7 @@ class Dice:
     '''
     @staticmethod
     def from_json(config: json):
+        name = config['name'] if "name" in config else None
         try:
             dist_type = config['dist_type']
         except KeyError:
@@ -163,11 +168,17 @@ class Dice:
             print("provided config missing required field: 'sides'")
             return Dice()
         
-        value_map = {side:0 for side in sides}
+        value_map = {}
         weights = []
         for side, side_config in config['sides'].items():
             if 'value' in side_config:
-                value_map[side] = side_config['value']
+                value_map[side] = int(side_config['value'])
+            else:
+                try:
+                    value_map[side] = int(side)
+                except:
+                    value_map[side] = 0
+            
             if 'weight' in side_config:
                 try:
                     weights.append(float(side_config['weight']))
@@ -180,8 +191,7 @@ class Dice:
         elif dist_type == "normal":
             return Dice.normal(sides, value_map)
         else:
-            dist = [sum(weights[:i+1]) for i in range(len(weights))]
-            return Dice(values, dist, value_map)
+            return Dice(sides, weights, value_map, name)
     
     '''
     Construct a die with a uniform distribution
@@ -192,7 +202,7 @@ class Dice:
     '''
     @staticmethod
     def uniform(values: list[str] | list[int], value_map = None, name = None):
-        return Dice(values, [i * 1.0/len(values) for i in range(1, len(values)+1)], value_map, name if name else f"d{len(values)}<uniform>")
+        return Dice(values, [1.0/len(values) for i in range(1, len(values)+1)], value_map, name if name else f"d{len(values)}<uniform>")
     
     '''
     Construct a die with a truncated normal distribution
@@ -205,8 +215,7 @@ class Dice:
     def normal(values: list[str] | list[int], value_map = None, name = None):
         bins = [i for i in range(1, len(values)+1)]
         weights = [1/(stdev(bins) * sqrt(2*pi)) * e**(-(val - (sum(bins)/len(bins)))**2 / (2 * stdev(bins)**2)) for val in bins]
-        dist = [sum(weights[:idx+1]) for idx in range(len(weights))]
-        return Dice(values, dist, value_map, name = name if name else f"d{len(values)}<normal>")
+        return Dice(values, weights, value_map, name = name if name else f"d{len(values)}<normal>")
     
     '''
     Construct a 3-sided die
@@ -228,6 +237,13 @@ class Dice:
     @staticmethod
     def d6():
         return Dice.uniform([i for i in range(1,7)], name = "d6")
+    
+    '''
+    Construct a 8-sided die
+    '''
+    @staticmethod
+    def d8():
+        return Dice.uniform([i for i in range(1,9)], name = "d8")
     
     '''
     Construct a 10-sided die
