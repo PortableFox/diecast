@@ -87,18 +87,6 @@ class Dice:
             sides.append(self.values[idx])
         return Roll(num_dice, self, sides)
         
-    #'''
-    #Sums dice rolls based on value map
-    #----------------------------------
-    #:param (list): list of dice rolls to sum over
-    #:returns: if dice is numeric sum of all dice in list otherwise dictionary of counts for each side rolled
-    #'''
-    #def sum(self, rolls: list):
-    #    if self.is_numeric:
-    #        return sum([self.value_map[roll] for roll in rolls])
-    #    else:
-    #        return dict(sorted(Counter(rolls).items()))
-    
     '''
     Generate distribution using monte carlo method
     ----------------------------------------------
@@ -216,6 +204,19 @@ class Dice:
         bins = [i for i in range(1, len(values)+1)]
         weights = [1/(stdev(bins) * sqrt(2*pi)) * e**(-(val - (sum(bins)/len(bins)))**2 / (2 * stdev(bins)**2)) for val in bins]
         return Dice(values, weights, value_map, name = name if name else f"d{len(values)}<normal>")
+    
+    '''
+    Construct a die with a saddle (inverted normal) distribution
+    ------------------------------------------------------------
+    :param values (list[str] | list[int]): list of dice sides
+    :param value_map: optional map for side values -> integer values (useful if sides are strings)
+    :returns: dice with saddle distribution weighting for sides
+    '''
+    @staticmethod
+    def saddle(values: list[str] | list[int], value_map = None, name = None):
+        bins = [i for i in range(1, len(values)+1)]
+        weights = [1/(stdev(bins) * sqrt(2*pi)) * e**(-(val - (sum(bins)/len(bins)))**2 / (2 * stdev(bins)**2)) for val in bins]
+        return Dice(values, [max(weights)*1.1 - w for w in weights], value_map, name = name if name else f"d{len(values)}<saddle>")
     
     '''
     Construct a 3-sided die
