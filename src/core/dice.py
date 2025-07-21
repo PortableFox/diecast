@@ -132,7 +132,7 @@ class Dice:
     config layout:
     {
         "name": DICE_NAME
-        "dist_type": "uniform" | "normal" | "custom",
+        "dist_type": "uniform" | "normal" | "saddle" | "custom",
         "sides": {
             SIDE_LABEL : {
                 value: SIDE_VALUE, (optional numeric value of side primarily used for doing math on dice with non-numeric side labels)
@@ -143,7 +143,11 @@ class Dice:
     '''
     @staticmethod
     def from_json(config: json):
-        name = config['name'] if "name" in config else None
+        try:
+            name = config['name']
+        except KeyError:
+            name = None
+        
         try:
             dist_type = config['dist_type']
         except KeyError:
@@ -151,7 +155,7 @@ class Dice:
             return Dice()
         
         try:
-            sides = [k for k in config['sides'].keys()]
+            sides = [k for k in config['sides']]
         except KeyError:
             print("provided config missing required field: 'sides'")
             return Dice()
@@ -178,6 +182,8 @@ class Dice:
             return Dice.uniform(sides, value_map)
         elif dist_type == "normal":
             return Dice.normal(sides, value_map)
+        elif dist_type == "saddle":
+            return Dice.saddle(sides, value_map)
         else:
             return Dice(sides, weights, value_map, name)
     
