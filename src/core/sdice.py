@@ -14,7 +14,8 @@ class StatefulDice:
                                         node ids are determined by the index of their dice in the nodes list argument.
     :param verbose (bool): whether or not to print verbose dice state details (primarily for debugging purposes)
     '''
-    def __init__(self, nodes = [], links = [], verbose = False):
+    def __init__(self, nodes = [], links = [], name = None, verbose = False):
+        self.name = name if name else f"sdice<custom>"
         self.verbose = verbose
         self.node = self.TERMINAL
         self.start_node = self.TERMINAL
@@ -55,7 +56,7 @@ class StatefulDice:
         fmt_nid = lambda node_id: "TERMINAL_NODE" if node_id == self.TERMINAL else node_id
         fmt_nid_info = lambda node_id, data: "n/a" if node_id == self.TERMINAL else str(data)
         
-        res = f'StatefulDice{{\n'
+        res = f'{self.name} stateful dice {{\n'
         for node in self.node_list:
             res += f'\tnode id: {fmt_nid(node)}\n'
             res += f'\t\t dice: {fmt_nid_info(node, self.node_list[node]["dice"].__repr__())}\n'
