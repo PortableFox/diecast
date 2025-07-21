@@ -91,9 +91,11 @@ class Dice:
     Generate distribution using monte carlo method
     ----------------------------------------------
     :param num_samples (int): number of samples to generate with
+    :param num_dice (int): number of dice to roll for each sample (numeric dice only)
+    :param as_percent (bool): return values as percent of total instead of count
     :returns: dictionary of the form {side: times rolled for each side}
     '''
-    def mc(self, num_samples: int = 100000, num_dice: int = 1):
+    def mc(self, num_samples: int = 100000, num_dice: int = 1, as_percent: bool = False):
         if not self.is_numeric and num_dice > 1:
             raise ValueError("Monte carlo distributions over composite rolls are undefined for non-numeric dice")
         counts = {}
@@ -101,7 +103,11 @@ class Dice:
             rolls = self.roll(num_dice)
             key = sum(rolls) if self.is_numeric else str(rolls)
             counts[key] = 1 if key not in counts.keys() else counts[key]+1 
-        return dict(sorted(counts.items()))
+        result = dict(sorted(counts.items()))
+        if as_percent:
+            return {k:f'{v/sum(result.values())*100.0:.2f}%' for k,v in result.items()}
+        else:
+            return result
     
     '''
     Display plot of monte carlo distribution
@@ -115,7 +121,7 @@ class Dice:
         
         plt.bar(counts.keys(), totals, color='skyblue', edgecolor='black')
         plt.gca().set_xticks(list(counts.keys()))
-        plt.title('Distribution')
+        plt.title(f'{num_dice}{self.name.capitalize()} Dice Distribution ({num_samples:,} samples)')
         plt.xlabel('Values')
         plt.ylabel('Frequency')
         plt.show()
