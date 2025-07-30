@@ -1,2 +1,2 @@
 # diecast
-A framework for generating and using custom dice
+A generalized framework for defining and using arbitrarily complex dice

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+exclude = ["venv"]
+
+[project]
+name = "wbtk-diecast"
+version = "0.0a1"
+authors = [{name="Danielle Asher"}]
+description = "A generalized framework for defining and using arbitrarily complex dice"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/PortableFox/diecast"
+Issues = "https://github.com/PortableFox/diecast/issues"
