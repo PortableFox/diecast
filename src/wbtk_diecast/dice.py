@@ -566,3 +566,17 @@ class StatefulDice:
             self.node = new_node
         except KeyError:
             print(f"Unable to update state as value {value} is not a valid side for current dice {self.node_list[self.node]['dice']}")
+    
+    '''
+    Generate stateful dice with nodes initialized from list of dice
+    '''
+    @staticmethod
+    def from_dice(dice, label = "SDice"):
+        sdie = StatefulDice(name = label)
+        for node_id, die in enumerate(dice):
+            if not isinstance(die, Dice):
+                raise TypeError("dice list may only contain Dice")
+            sdie.set_node(node_id, die)
+        sdie.set_start_node(0)
+        sdie.reset()
+        return sdie
