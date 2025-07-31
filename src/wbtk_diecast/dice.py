@@ -1,7 +1,7 @@
 from bisect import bisect_left
 from collections import Counter
 from math import pi, e, sqrt
-from random import random
+from random import random, randint
 from statistics import stdev
 
 import json
@@ -229,63 +229,7 @@ class Dice:
         bins = [i for i in range(1, len(values)+1)]
         weights = [1/(stdev(bins) * sqrt(2*pi)) * e**(-(val - (sum(bins)/len(bins)))**2 / (2 * stdev(bins)**2)) for val in bins]
         return Dice(values, [max(weights)*1.1 - w for w in weights], value_map, name = name if name else f"d{len(values)}<saddle>")
-    
-    '''
-    Construct a 3-sided die
-    '''
-    @staticmethod
-    def d3(label = "d3"):
-        return Dice.uniform([i for i in range(1,4)], name = label)
-    
-    '''
-    Construct a 4-sided die
-    '''
-    @staticmethod
-    def d4(label = "d4"):
-        return Dice.uniform([i for i in range(1,5)], name = label)
-    
-    '''
-    Construct a 6-sided die
-    '''
-    @staticmethod
-    def d6(label = "d6"):
-        return Dice.uniform([i for i in range(1,7)], name = labe)
-    
-    '''
-    Construct a 8-sided die
-    '''
-    @staticmethod
-    def d8(label = "d8"):
-        return Dice.uniform([i for i in range(1,9)], name = label)
-    
-    '''
-    Construct a 10-sided die
-    '''
-    @staticmethod
-    def d10(label = "d10"):
-        return Dice.uniform([i for i in range(1,11)], name = label)
-    
-    '''
-    Construct a 12-sided die
-    '''
-    @staticmethod
-    def d12(label = "d12"):
-        return Dice.uniform([i for i in range(1,13)], name = label)
-    
-    '''
-    Construct a 20-sided die
-    '''
-    @staticmethod
-    def d20(label = "d20"):
-        return Dice.uniform([i for i in range(1,21)], name = label)
-    
-    '''
-    Construct a 100-sided die
-    '''
-    @staticmethod
-    def d100(label = "d100"):
-        return Dice.uniform([i for i in range(1,101)], name = label)
-    
+
     '''
     Construct a coin
     '''
@@ -301,6 +245,95 @@ class Dice:
         return Dice.uniform(values = ['+', '-', '0'], value_map = {'+': 1, '-': -1, '0': 0}, name = label)
 
 
+class SimpleDice(Dice):
+    def __init__(self, min_val = 1, max_val = 20, name = None):
+        if min_val > max_val:
+            raise ValueError("Minimum side value cannot be greater than maximum side")
+        
+        self.name = name if name else f"d{max_val - min_val + 1} [{min_val} - {max_val}]"
+        self.min_val = min_val
+        self.max_val = max_val
+        self.values = range(min_val, max_val+1)
+        self.is_numeric = True
+    
+    def roll(self, num_dice: int = 1):
+        sides = []
+        for i in range(num_dice):
+            sides.append(randint(self.min_val, self.max_val))
+        return Roll(num_dice, self, sides)
+    
+    def __contains__(self, val):
+        return self.min_val <= val <= self.max_val
+
+    def __eq__(self, other):
+        return self.min_val == other.min_val and self.max_val == other.max_val and isinstance(other, SimpleDice)
+
+    def __repr__(self):
+        return f'SimpleDice(name = "{self.name}", range = {self.min_val} - {self.max_val})' 
+    
+    def __str__(self):
+        res = f'{self.name} simple dice {{\n'
+        res += f'\tRange: {self.min_val} - {self.max_val}'
+        res += f'}}'
+        return res
+    
+    '''
+    Construct a 3-sided die
+    '''
+    @staticmethod
+    def d3(label = "d3"):
+        return SimpleDice(max_val = 3, name = label)
+    
+    '''
+    Construct a 4-sided die
+    '''
+    @staticmethod
+    def d4(label = "d4"):
+        return SimpleDice(max_val = 4, name = label)
+    
+    '''
+    Construct a 6-sided die
+    '''
+    @staticmethod
+    def d6(label = "d6"):
+        return SimpleDice(max_val = 6, name = label)
+    
+    '''
+    Construct a 8-sided die
+    '''
+    @staticmethod
+    def d8(label = "d8"):
+        return SimpleDice(max_val = 8, name = label)
+    
+    '''
+    Construct a 10-sided die
+    '''
+    @staticmethod
+    def d10(label = "d10"):
+        return SimpleDice(max_val = 10, name = label)
+    
+    '''
+    Construct a 12-sided die
+    '''
+    @staticmethod
+    def d12(label = "d12"):
+        return SimpleDice(max_val = 12, name = label)
+    
+    '''
+    Construct a 20-sided die
+    '''
+    @staticmethod
+    def d20(label = "d20"):
+        return SimpleDice(max_val = 20, name = label)
+    
+    '''
+    Construct a 100-sided die
+    '''
+    @staticmethod
+    def d100(label = "d100"):
+        return SimpleDice(max_val = 100, name = label)
+
+
 '''
 Representation of a dice roll
 '''
@@ -309,7 +342,9 @@ class Roll:
         self.num_dice = num_dice
         self.dice = dice
         self.sides = values
-        self.values = [dice.value_map[side] for side in self.sides]
+        self.values = values
+        if type(dice) == Dice:
+            self.values = [dice.value_map[side] for side in self.sides]
         self.is_numeric = self.dice.is_numeric
         
     def __float__(self):
@@ -460,6 +495,7 @@ class StatefulDice:
             StatefulDice.TERMINAL: {
                 'name': 'Terminal Node',
                 'dice':  Dice.uniform([None]),
+                'decorators': None,
                 'edges': {
                     None: StatefulDice.TERMINAL
                 }
@@ -515,9 +551,10 @@ class StatefulDice:
         self.node = self.start_node
      
     def roll(self):
-        result = self.node_list[self.node]['dice']()
+        result = self.node_list[self.node]['dice']() 
+        decorators = self.node_list[self.node]['decorators']
         self.update_state(sum(result) if result.is_numeric else str(result))
-        return result
+        return decorators[int(result)].roll() if decorators and int(result) in decorators else result
     
     def roll_until(self, node_id, max_iter = 100):
         rolls = []
@@ -528,10 +565,11 @@ class StatefulDice:
                 rolls.append(self.roll())
         return rolls
     
-    def set_node(self, node_id, dice, name = None, default_link = None):
+    def set_node(self, node_id, dice, decorators = None, name = None, default_link = None):
         self.node_list[node_id] = {
             'name': name if name else dice.name,
             'dice': dice,
+            'decorators': decorators,
             'edges': {side: default_link if default_link else self.TERMINAL for side in dice.values}
         }
      
