@@ -234,71 +234,71 @@ class Dice:
     Construct a 3-sided die
     '''
     @staticmethod
-    def d3():
-        return Dice.uniform([i for i in range(1,4)], name = "d3")
+    def d3(label = "d3"):
+        return Dice.uniform([i for i in range(1,4)], name = label)
     
     '''
     Construct a 4-sided die
     '''
     @staticmethod
-    def d4():
-        return Dice.uniform([i for i in range(1,5)], name = "d4")
+    def d4(label = "d4"):
+        return Dice.uniform([i for i in range(1,5)], name = label)
     
     '''
     Construct a 6-sided die
     '''
     @staticmethod
-    def d6():
-        return Dice.uniform([i for i in range(1,7)], name = "d6")
+    def d6(label = "d6"):
+        return Dice.uniform([i for i in range(1,7)], name = labe)
     
     '''
     Construct a 8-sided die
     '''
     @staticmethod
-    def d8():
-        return Dice.uniform([i for i in range(1,9)], name = "d8")
+    def d8(label = "d8"):
+        return Dice.uniform([i for i in range(1,9)], name = label)
     
     '''
     Construct a 10-sided die
     '''
     @staticmethod
-    def d10():
-        return Dice.uniform([i for i in range(1,11)], name = "d10")
+    def d10(label = "d10"):
+        return Dice.uniform([i for i in range(1,11)], name = label)
     
     '''
     Construct a 12-sided die
     '''
     @staticmethod
-    def d12():
-        return Dice.uniform([i for i in range(1,13)], name = "d12")
+    def d12(label = "d12"):
+        return Dice.uniform([i for i in range(1,13)], name = label)
     
     '''
     Construct a 20-sided die
     '''
     @staticmethod
-    def d20():
-        return Dice.uniform([i for i in range(1,21)], name = "d20")
+    def d20(label = "d20"):
+        return Dice.uniform([i for i in range(1,21)], name = label)
     
     '''
     Construct a 100-sided die
     '''
     @staticmethod
-    def d100():
-        return Dice.uniform([i for i in range(1,101)], name = "d100")
+    def d100(label = "d100"):
+        return Dice.uniform([i for i in range(1,101)], name = label)
     
     '''
     Construct a coin
     '''
     @staticmethod
-    def coin():
-        return Dice.uniform(['heads', 'tails'], name = "<coin>")
+    def coin(label = "<coin>"):
+        return Dice.uniform(['heads', 'tails'], name = label)
     
     '''
     Construct a fudge die
     '''
     @staticmethod
-    def fudge():
-        return Dice.uniform(values = ['+', '-', '0'], value_map = {'+': 1, '-': -1, '0': 0}, name = "dF")
+    def fudge(label = "dF"):
+        return Dice.uniform(values = ['+', '-', '0'], value_map = {'+': 1, '-': -1, '0': 0}, name = label)
 
 
 '''
